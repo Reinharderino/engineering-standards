@@ -15,6 +15,12 @@ the whole thing is plain Markdown in a repo, copied in by a script.
   The floor (validation, error handling, security, accessibility, clarity) is tier-independent.
 - **The YAGNI ladder** — seven rungs, stop at the first that holds. No abstraction without a
   second caller.
+- **Solution before stack** — the design is stated with no language, framework or library in it;
+  the stack is chosen afterwards, from the solution.
+- **Repository context** — every repo carries `docs/ARCHITECTURE.md` (structure as it *is*, updated
+  in the same diff as the code) and `docs/MEMORY.md` (only what the code and git log cannot tell
+  you). An index of repositories lives in `$ES_REGISTRY`, default `~/.claude/REPOSITORIES.md`,
+  outside every repo.
 - Clean code · SOLID · design-decision protocol · error handling · security baseline ·
   communication · git discipline · approval gates.
 
@@ -29,29 +35,42 @@ the whole thing is plain Markdown in a repo, copied in by a script.
 | `code-review.md` | Requesting a review, and receiving one without performative agreement |
 | `delegation.md` | Subagents, parallel dispatch, worktrees, verifying agent output |
 | `architecture.md` | Core-tier design: layers, dependency rule, modular monolith |
+| `repo-memory.md` | Entering a repo: the two docs, what belongs in each, the registry |
 
 ## Install
 
 ```bash
 ./scripts/install.sh                 # user-wide Claude Code skill (~/.claude/skills)
-./scripts/install.sh /path/to/repo   # into a project: .cursor/rules/ + .claude/skills/
+./scripts/install.sh /path/to/repo   # into a project, all targets at once
 ```
 
-## Cursor
+Into a project it writes `.claude/skills/`, `.cursor/rules/`, `.github/` and `AGENTS.md`
+(the last one only if the repo doesn't already have one — otherwise merge by hand).
 
-Cursor has no on-demand file loading, so `scripts/build.sh` flattens the source into two rules:
+## Targets
 
-- `.cursor/rules/engineering-standards.mdc` — `alwaysApply: true`, the baseline.
-- `.cursor/rules/engineering-workflows.mdc` — `alwaysApply: false`, agent-requested, all references.
+| Tool | Files | Loading |
+|---|---|---|
+| Claude Code (CLI, desktop, VS Code / JetBrains extension) | `.claude/skills/engineering-standards/` | Native skill: SKILL.md always, `references/` on demand |
+| Cursor | `.cursor/rules/engineering-standards.mdc` (`alwaysApply: true`)<br>`.cursor/rules/engineering-workflows.mdc` (`alwaysApply: false`, agent-requested) | No lazy file loading — baseline always on, workflows pulled by description |
+| VS Code + GitHub Copilot | `.github/copilot-instructions.md`<br>`.github/instructions/engineering-workflows.instructions.md` (`applyTo: '**'`) | Baseline always on. In agent mode Copilot can also open the `references/` files directly — the paths in the baseline point at them |
+| Anything else that reads `AGENTS.md` | `AGENTS.md` | Thin pointer only, no duplicated content |
 
-**Never edit the `.mdc` files.** They are generated. Edit `skills/engineering-standards/`, then:
+Copilot needs `github.copilot.chat.codeGeneration.useInstructionFiles: true` in VS Code settings
+(default on in current versions).
+
+If the always-on workflows file costs too much context in Copilot, narrow its `applyTo` globs or
+delete it — agent mode still reaches the references through the paths in the baseline.
+
+**Never edit the generated files** (`.cursor/rules/*.mdc`, `.github/**`, `AGENTS.md`). Edit
+`skills/engineering-standards/`, then:
 
 ```bash
 ./scripts/build.sh
 ```
 
-`build.sh` fails if the iron laws or the reference bodies don't survive generation — that's the
-test.
+`build.sh` fails if the iron laws, the reference bodies, or the rewritten reference paths don't
+survive generation — that's the test.
 
 ## Provenance
 

@@ -16,9 +16,18 @@ if [ $# -eq 0 ]; then
 else
   TARGET="$1"
   [ -d "$TARGET" ] || { echo "no such directory: $TARGET" >&2; exit 1; }
-  mkdir -p "$TARGET/.cursor/rules" "$TARGET/.claude/skills"
+  mkdir -p "$TARGET/.cursor/rules" "$TARGET/.claude/skills" "$TARGET/.github/instructions"
   cp "$ROOT/.cursor/rules/"*.mdc "$TARGET/.cursor/rules/"
+  cp "$ROOT/.github/copilot-instructions.md" "$TARGET/.github/"
+  cp "$ROOT/.github/instructions/"*.instructions.md "$TARGET/.github/instructions/"
+  if [ -e "$TARGET/AGENTS.md" ]; then
+    HAD_AGENTS=1
+  else
+    HAD_AGENTS=0
+    cp "$ROOT/AGENTS.md" "$TARGET/"
+  fi
   rm -rf "$TARGET/.claude/skills/engineering-standards"
   cp -r "$ROOT/skills/engineering-standards" "$TARGET/.claude/skills/"
-  echo "installed -> $TARGET/.cursor/rules/ and $TARGET/.claude/skills/"
+  echo "installed -> $TARGET: .cursor/rules/, .github/, .claude/skills/"
+  [ "$HAD_AGENTS" -eq 0 ] || echo "note: AGENTS.md already existed, left untouched — merge by hand"
 fi

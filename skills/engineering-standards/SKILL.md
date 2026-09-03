@@ -38,17 +38,24 @@ silently.
 ### Order of operations for any non-trivial task
 
 ```
+CONTEXT     read docs/ARCHITECTURE.md and docs/MEMORY.md if the repo has them (§12)
+   ↓
 UNDERSTAND  read the code the change touches, trace the real flow end to end
    ↓
 RIGHT-SIZE  classify the artifact tier (§2), climb the ladder (§3)
    ↓
-DECIDE      surface pattern/architecture forks, don't pick silently (§6)
+SOLVE       state the solution with no language, framework or library in it
+   ↓
+DECIDE      only now pick stack and patterns — surface the fork, don't pick silently (§6)
    ↓
 PLAN        for multi-file or multi-session work, write the plan down (references/planning.md)
    ↓
 BUILD       RED → GREEN → REFACTOR
    ↓
 VERIFY      run the command, read the output, then claim
+   ↓
+RECORD      structural change → update ARCHITECTURE.md in the same diff.
+            Non-derivable decision → propose a MEMORY.md entry (§12)
 ```
 
 Laziness shortens the *solution*, never the *reading*. A minimal diff in the wrong place is not
@@ -305,6 +312,45 @@ Never performed automatically. Propose → wait → proceed.
 | Changing a public API contract | Breaking change |
 | Running database migrations | Schema changes are permanent |
 | Deploying to any environment | Production impact |
+| Writing a `docs/MEMORY.md` entry | An unreviewed entry is an assertion nobody checked (§12) |
+| Bootstrapping `docs/ARCHITECTURE.md` in an existing repo | The repo may already document this elsewhere |
+
+---
+
+## §12. Repository Context & Memory
+
+Every repository carries its own context in two versioned files. They are read **before** the code
+and updated **with** the code — never "later".
+
+| File | What it is | Rule |
+|---|---|---|
+| `docs/ARCHITECTURE.md` | The structure as it **is**, not as it was intended: module map, boundaries, entry points, data flow, external dependencies, how to run and test it | A change that alters the structure updates this file **in the same diff**. A stale architecture doc is worse than none |
+| `docs/MEMORY.md` | Only what the code and the git history cannot tell you: decisions and their *why*, constraints imposed from outside, traps, dead ends already tried and rejected | Dated entries, one fact each. Proposed by you, approved by the user before writing |
+
+**Entering a repository:**
+1. Both files exist → read them before touching code. They outrank your assumptions about the repo.
+2. Missing → offer to bootstrap them. Don't create them silently, and don't create them in a
+   throwaway-tier repo that will not outlive the week.
+3. Contradicted by the code → the code wins; say so and propose the correction.
+
+**What never goes in MEMORY.md:** what the code already states · what `git log` already records ·
+what belongs in ARCHITECTURE.md · session narration ("today we refactored X"). If it is derivable,
+it is duplication, and duplicated context goes stale and starts lying.
+
+**The registry.** One line per repository worked on, in `$ES_REGISTRY` (default
+`~/.claude/REPOSITORIES.md`) — outside every repo, so project names and paths never leak into a
+corporate one:
+
+```markdown
+| Path | Purpose | Stack | Tier | Last |
+|---|---|---|---|---|
+| ~/Proyectos/foo | Invoice reconciliation for the billing team | Python 3.12, Postgres | Core | 2026-09-03 |
+```
+
+First session in a repo not listed → add the row. Purpose is one line, written for someone with no
+context. The registry is an index, not a journal: it never grows a history column.
+
+Detail and templates: `references/repo-memory.md`.
 
 ---
 
@@ -322,3 +368,4 @@ the laws above.
 | `references/code-review.md` | Requesting or receiving review of a diff |
 | `references/delegation.md` | Dispatching subagents or working in parallel branches/worktrees |
 | `references/architecture.md` | Designing or restructuring a Core/Production-tier module |
+| `references/repo-memory.md` | Entering a repository, or recording a decision worth keeping |
