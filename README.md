@@ -39,13 +39,37 @@ the whole thing is plain Markdown in a repo, copied in by a script.
 
 ## Install
 
+**bash / zsh** (Linux, macOS, WSL, Git Bash):
+
 ```bash
 ./scripts/install.sh                 # user-wide Claude Code skill (~/.claude/skills)
 ./scripts/install.sh /path/to/repo   # into a project, all targets at once
 ```
 
+**PowerShell** (5.1 and later):
+
+```powershell
+.\scripts\install.ps1
+.\scripts\install.ps1 C:\src\my-project
+```
+
+**cmd.exe** — wrapper around the same script, and the way around a restrictive execution policy:
+
+```bat
+scripts\install.cmd
+scripts\install.cmd C:\src\my-project
+```
+
+If PowerShell refuses `install.ps1` directly (`running scripts is disabled on this system`), use
+`install.cmd` — it passes `-ExecutionPolicy Bypass` for that one invocation without changing any
+machine setting.
+
 Into a project it writes `.claude/skills/`, `.cursor/rules/`, `.github/` and `AGENTS.md`
 (the last one only if the repo doesn't already have one — otherwise merge by hand).
+
+The generated files are committed, so **installing never needs a build.** Regenerating them after
+editing `skills/engineering-standards/` needs bash: `./scripts/build.sh`, from Git Bash or WSL on
+Windows. Editing the standard is a maintainer action; installing it is not.
 
 ## Targets
 
