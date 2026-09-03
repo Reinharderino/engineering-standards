@@ -109,3 +109,7 @@ Distilled from three sources, all MIT:
 
 The persona and tone layers of both plugins were deliberately left out. This is a standard, not
 a character.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
