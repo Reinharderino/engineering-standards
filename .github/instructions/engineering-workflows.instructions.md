@@ -460,36 +460,30 @@ help.
 - **Every brief lists the exact files** the agent may create or edit, and the ones it should read.
   Two parallel tasks never share a file. If two need the same file, they run in sequence, or the
   orchestrator makes that change itself.
-- **Shared files belong to the orchestrator:** service/module registration, shared schema or DDL,
-  shared contracts, routing and menus, translations, solution/workspace files, Dockerfiles. The
-  agent reports the exact line to add ("pending registration") and does not apply it. A brief may
-  hand one shared file to one agent by name, only when no parallel task touches it.
+- **Files every parallel task would touch belong to the orchestrator** — whatever the project uses
+  to wire things together. The agent reports the exact change needed ("pending wiring") and does
+  not apply it. A brief may hand one such file to one agent by name, only when no parallel task
+  touches it.
 - **Contracts first.** If two tasks talk to each other, the orchestrator fixes the contract before
   dispatching either.
-- **Work that needs a real environment is not delegated** — seeds, end-to-end runs against live
-  services, third-party integration. The orchestrator does it, or the task is redesigned so tests
-  can judge it.
 - **Never resume or relaunch an agent without first reading what it left behind.** Half-done work
   is finished on the same branch, not redone on a new one.
 
 Split by file or module boundary, never by "half the feature each".
 
-## What the agent may do to verify — and nothing else
+## Verification inside a subagent
 
-**The compiler, the linter and the tests are the only judges inside a subagent.** Allowed: build
-the affected project, lint the touched files, run the affected tests (end-to-end only against
-mocked services). The full suite runs once, at the end.
+**The brief names the verification commands, and the agent runs those.** Whether that includes
+live environments (containers, a running app, real services) is the project's call — say it in the
+brief, don't leave the agent to decide. Acceptance criteria written as tests are the cheapest judge
+an agent can't argue with. The full suite runs once, at the end, after integration.
 
-Forbidden inside a subagent: starting databases or containers, starting the app or API, HTTP calls
-against any service, screenshots, scratch scripts or console apps to "try it", web searches (unless
-the task *is* research), installing packages, merge, push, deploy. Manual verification is the
-orchestrator's call, made once, after integration — it is where delegation cost explodes.
+Merge, push, deploy and installing packages stay with the orchestrator regardless (§11).
 
 Same failure three times for the same cause → stop and report the exact error. Do not iterate.
 
-Report back in ~15 lines: branch and commit · files changed · pending registrations · build, lint
-and test commands with their numbers · assumptions and open items. No restating the brief, no
-explaining the code.
+Report back briefly: branch and commit · files changed · pending wiring · verification commands
+with their results · assumptions and open items. No restating the brief, no explaining the code.
 
 ## Inline vs agent-per-task
 
@@ -501,8 +495,6 @@ For executing a written plan, pick deliberately and say why:
 - **Agent per task** — a fresh agent implements each task and a fresh reviewer gates it before the
   next. Most thorough, one cold context per task and per review. Right when tasks are independent
   and a shipped mistake is expensive.
-
-The user can veto delegation outright for a project; that holds until they lift it.
 
 ## Verifying agent output — mandatory
 
