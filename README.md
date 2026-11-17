@@ -110,6 +110,10 @@ Distilled from three sources, all MIT:
 The persona and tone layers of both plugins were deliberately left out. This is a standard, not
 a character.
 
+Last synced against upstream: **superpowers v7.0.2, ponytail v5.3.3** (2026-11-17). To pull later
+changes, diff each upstream's `skills/` from that release to HEAD and fold in what changes the
+rules — tooling, hooks and harness fixes don't apply here.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

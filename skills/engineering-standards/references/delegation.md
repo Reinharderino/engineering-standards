@@ -22,10 +22,58 @@ Do not delegate to avoid thinking. A confident wrong answer costs more than the 
   your session.
 - **Next** — the exact form of the report you want back.
 
-## Parallel dispatch
+Keep the brief short: objective, files it may create or edit, files it must read, acceptance
+criteria written as tests, verification commands. Context the agent does not need is cost, not
+help.
 
-Only for genuinely independent work. Two agents editing the same file is a merge conflict you
-created on purpose. Split by file boundary or module boundary, never by "half the feature each".
+## Scope by file — the orchestrator's rules
+
+- **Every brief lists the exact files** the agent may create or edit, and the ones it should read.
+  Two parallel tasks never share a file. If two need the same file, they run in sequence, or the
+  orchestrator makes that change itself.
+- **Shared files belong to the orchestrator:** service/module registration, shared schema or DDL,
+  shared contracts, routing and menus, translations, solution/workspace files, Dockerfiles. The
+  agent reports the exact line to add ("pending registration") and does not apply it. A brief may
+  hand one shared file to one agent by name, only when no parallel task touches it.
+- **Contracts first.** If two tasks talk to each other, the orchestrator fixes the contract before
+  dispatching either.
+- **Work that needs a real environment is not delegated** — seeds, end-to-end runs against live
+  services, third-party integration. The orchestrator does it, or the task is redesigned so tests
+  can judge it.
+- **Never resume or relaunch an agent without first reading what it left behind.** Half-done work
+  is finished on the same branch, not redone on a new one.
+
+Split by file or module boundary, never by "half the feature each".
+
+## What the agent may do to verify — and nothing else
+
+**The compiler, the linter and the tests are the only judges inside a subagent.** Allowed: build
+the affected project, lint the touched files, run the affected tests (end-to-end only against
+mocked services). The full suite runs once, at the end.
+
+Forbidden inside a subagent: starting databases or containers, starting the app or API, HTTP calls
+against any service, screenshots, scratch scripts or console apps to "try it", web searches (unless
+the task *is* research), installing packages, merge, push, deploy. Manual verification is the
+orchestrator's call, made once, after integration — it is where delegation cost explodes.
+
+Same failure three times for the same cause → stop and report the exact error. Do not iterate.
+
+Report back in ~15 lines: branch and commit · files changed · pending registrations · build, lint
+and test commands with their numbers · assumptions and open items. No restating the brief, no
+explaining the code.
+
+## Inline vs agent-per-task
+
+For executing a written plan, pick deliberately and say why:
+
+- **Inline** — you implement every task in this session, then one fresh reviewer checks the whole
+  branch. Cheapest. Right when tasks lean on each other's interfaces, or the plan already carries
+  the design.
+- **Agent per task** — a fresh agent implements each task and a fresh reviewer gates it before the
+  next. Most thorough, one cold context per task and per review. Right when tasks are independent
+  and a shipped mistake is expensive.
+
+The user can veto delegation outright for a project; that holds until they lift it.
 
 ## Verifying agent output — mandatory
 

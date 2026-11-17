@@ -80,8 +80,9 @@ disappears.
 
 Location: `docs/plans/YYYY-MM-DD-<feature>.md` (or wherever the project keeps them).
 
-Write for an engineer who is skilled but has zero context on this codebase and domain. Everything
-they need is in the plan: files to touch, how to test, what to read first.
+Write for an engineer who has not seen this codebase or this spec. Assume they write idiomatic code
+once they know the exact interface and the exact test. What they cannot know is what you decided:
+which files, which names and signatures, which values from the spec, which tests prove each task.
 
 **Structure:**
 1. **Header** — goal in one paragraph, the spec/requirements it implements, how to verify the
@@ -94,8 +95,35 @@ they need is in the plan: files to touch, how to test, what to read first.
    reviewer's gate. Fold setup, config and docs into the task whose deliverable needs them; split
    only where a reviewer could reject one task while approving its neighbor. Each task ends with
    an independently testable deliverable.
-4. **Steps within a task** — one action each, 2–5 minutes: write the failing test · run it and
-   watch it fail · implement the minimal code · run the tests · commit.
+4. **Steps within a task** — one action each, with a checkable result: write the failing test ·
+   run it and watch it fail · implement · run the tests · commit.
+5. **Review focus** — the few input classes or failure modes the spec implies but no task's tests
+   exercise, most likely to bite a real user first. One line each: the input or condition, and
+   what a reasonable person would expect. Then add each one's test to the task that owns the code.
+   An empty section means you checked, not that you skipped.
+
+**A plan is the set of decisions the implementer cannot make alone.** A step is done when it
+admits exactly one reasonable implementation — unambiguous, not complete:
+
+- **Test step:** test name and assertions, as code, with the spec's exact values.
+- **Code step:** exact signature (name, parameters, return type) and file, plus the values the
+  spec pins. The implementer writes the body. A body appears only for an algorithm the signature
+  and tests don't determine, or exact copy the spec fixes.
+- **Verification step:** the command, and the output that means it passed.
+- **Reference to another task:** point at that task's interface; don't repeat its code.
+
+Two failures, both caught on self-review: lines that decide nothing ("TBD", "handle edge cases",
+"add validation", "tests for the above", a type no task defines) are gaps; function bodies the
+signature and tests already determine are a transcript. **Proportion check:** a plan several times
+longer than its spec, or mostly code blocks, has written the program instead of planning it —
+replace bodies with signatures and assertions.
+
+**The spec is a vision document.** It says what the software must do, not every input it will
+meet. Its silence on an input is not permission for that input to break the program.
+
+After self-review, hand the plan to the user to read, with a recommended execution mode
+(`delegation.md`, inline vs agent-per-task) and one sentence on why. No implementation until they
+confirm.
 
 If the spec spans several independent subsystems, break it into one plan per subsystem. Each plan
 must produce working, testable software on its own.

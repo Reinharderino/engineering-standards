@@ -41,6 +41,12 @@ not demand, no "improving" adjacent code. Over-engineering here is the most comm
 Run it. The test passes, the other tests still pass, and the output is clean — no new warnings or
 stderr noise.
 
+"Other tests" means the project's suite, not your file. Before calling the change done, run the
+repo's test command even when the task named a single test file — a scope statement bounds the
+deliverable, not the verification. Every failure that run shows, including ones you didn't cause,
+goes in the report by name. A red test you watched scroll past and didn't mention is a report
+falsified by omission.
+
 ### REFACTOR
 Now clean up, with the tests as the safety net. Stay green after every step.
 

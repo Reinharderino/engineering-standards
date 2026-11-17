@@ -19,8 +19,27 @@ Ask for:      correctness bugs, missed callers, security at trust boundaries,
               simplification/reuse opportunities. Severity-tag each finding.
 ```
 
+What the reviewer owes:
+
+- **Read past the diff.** Callers of every changed function, what it calls, its tests. A change
+  can break code it does not touch: a changed signature, return value or behavior means grepping
+  every caller.
+- **State the load assumed** — one person running a script, or many users and processes at once —
+  and judge scale against it: check-then-write races, per-item queries, unbounded growth, O(n²) on
+  real input, per-process state that must be shared.
+- **Every finding carries a concrete case:** "this input or situation produces this wrong result".
+  No case, no finding. No "consider", no taste, no vague worries.
+- **A marked shortcut (`upgrade:` comment naming its ceiling, §2) is a decision, not a finding** —
+  unless the expected load already crosses that ceiling.
+- **Spec silence is not permission.** Behavior the spec doesn't mention is judged by what a
+  reasonable user would expect.
+- **List what was declined.** Before the verdict, one line per behavior considered and set aside
+  as out of scope, with the reason. The author rules on each; nothing is dropped silently.
+
 Reviewer output format — one line per finding, most severe first:
 `path:line: <severity>: <problem>. <fix>.`
+End with a verdict (`ship` / `fix N first`) and `not checked:` for anything that mattered but
+couldn't be verified.
 
 Severities: **Critical** (data loss, security, incorrect behavior shipped) · **Important**
 (bug under a reachable condition, missing validation at a boundary) · **Minor** (clarity, naming,

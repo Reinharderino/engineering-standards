@@ -12,6 +12,9 @@ OUT="$ROOT/.cursor/rules"
 GH="$ROOT/.github"
 mkdir -p "$OUT" "$GH/instructions"
 
+# Order matters: it is the order the workflows appear in the generated files.
+REFS="debugging tdd verification planning code-review delegation architecture repo-memory"
+
 strip_frontmatter() { sed '1{/^---$/!q}; 1,/^---$/d' "$1"; }
 
 {
@@ -37,7 +40,7 @@ alwaysApply: false
 
 # Engineering Workflows
 HDR
-  for f in debugging tdd verification planning code-review delegation architecture repo-memory; do
+  for f in $REFS; do
     printf '\n\n---\n\n'
     cat "$SRC/references/$f.md"
   done
@@ -65,7 +68,7 @@ description: Operational detail behind the engineering baseline — debugging, T
 
 # Engineering Workflows
 HDR
-  for f in debugging tdd verification planning code-review delegation architecture repo-memory; do
+  for f in $REFS; do
     printf '\n\n---\n\n'
     cat "$SRC/references/$f.md"
   done
@@ -108,5 +111,10 @@ for f in "$OUT/engineering-workflows.mdc" "$GH/instructions/engineering-workflow
 done
 grep -q '\.claude/skills/engineering-standards/references/debugging\.md' "$GH/copilot-instructions.md" \
   || { echo "FAIL: reference paths not rewritten for Copilot" >&2; exit 1; }
+
+# check: every reference file is shipped (catches a new file not added to REFS)
+for f in "$SRC"/references/*.md; do
+  case " $REFS " in *" $(basename "$f" .md) "*) ;; *) echo "FAIL: $f not in REFS" >&2; exit 1;; esac
+done
 
 echo "ok: cursor $(wc -l < "$OUT/engineering-standards.mdc")+$(wc -l < "$OUT/engineering-workflows.mdc") | copilot $(wc -l < "$GH/copilot-instructions.md")+$(wc -l < "$GH/instructions/engineering-workflows.instructions.md") | AGENTS.md"

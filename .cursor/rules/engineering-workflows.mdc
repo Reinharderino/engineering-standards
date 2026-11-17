@@ -123,6 +123,12 @@ not demand, no "improving" adjacent code. Over-engineering here is the most comm
 Run it. The test passes, the other tests still pass, and the output is clean — no new warnings or
 stderr noise.
 
+"Other tests" means the project's suite, not your file. Before calling the change done, run the
+repo's test command even when the task named a single test file — a scope statement bounds the
+deliverable, not the verification. Every failure that run shows, including ones you didn't cause,
+goes in the report by name. A red test you watched scroll past and didn't mention is a report
+falsified by omission.
+
 ### REFACTOR
 Now clean up, with the tests as the safety net. Stay green after every step.
 
@@ -174,7 +180,7 @@ Skipping a step is not verifying, it is asserting.
 
 | Claim | Requires | Not sufficient |
 |---|---|---|
-| Tests pass | Test command output, 0 failures | A previous run, "should pass" |
+| Tests pass | The project's full test command, 0 failures | A previous run, "should pass", only the file you touched |
 | Linter clean | Linter output, 0 errors | A partial check, extrapolation |
 | Build succeeds | Build command, exit 0 | Linter passing, "logs look fine" |
 | Bug fixed | The original symptom retested, passing | Code changed, assumed fixed |
@@ -282,8 +288,9 @@ disappears.
 
 Location: `docs/plans/YYYY-MM-DD-<feature>.md` (or wherever the project keeps them).
 
-Write for an engineer who is skilled but has zero context on this codebase and domain. Everything
-they need is in the plan: files to touch, how to test, what to read first.
+Write for an engineer who has not seen this codebase or this spec. Assume they write idiomatic code
+once they know the exact interface and the exact test. What they cannot know is what you decided:
+which files, which names and signatures, which values from the spec, which tests prove each task.
 
 **Structure:**
 1. **Header** — goal in one paragraph, the spec/requirements it implements, how to verify the
@@ -296,8 +303,35 @@ they need is in the plan: files to touch, how to test, what to read first.
    reviewer's gate. Fold setup, config and docs into the task whose deliverable needs them; split
    only where a reviewer could reject one task while approving its neighbor. Each task ends with
    an independently testable deliverable.
-4. **Steps within a task** — one action each, 2–5 minutes: write the failing test · run it and
-   watch it fail · implement the minimal code · run the tests · commit.
+4. **Steps within a task** — one action each, with a checkable result: write the failing test ·
+   run it and watch it fail · implement · run the tests · commit.
+5. **Review focus** — the few input classes or failure modes the spec implies but no task's tests
+   exercise, most likely to bite a real user first. One line each: the input or condition, and
+   what a reasonable person would expect. Then add each one's test to the task that owns the code.
+   An empty section means you checked, not that you skipped.
+
+**A plan is the set of decisions the implementer cannot make alone.** A step is done when it
+admits exactly one reasonable implementation — unambiguous, not complete:
+
+- **Test step:** test name and assertions, as code, with the spec's exact values.
+- **Code step:** exact signature (name, parameters, return type) and file, plus the values the
+  spec pins. The implementer writes the body. A body appears only for an algorithm the signature
+  and tests don't determine, or exact copy the spec fixes.
+- **Verification step:** the command, and the output that means it passed.
+- **Reference to another task:** point at that task's interface; don't repeat its code.
+
+Two failures, both caught on self-review: lines that decide nothing ("TBD", "handle edge cases",
+"add validation", "tests for the above", a type no task defines) are gaps; function bodies the
+signature and tests already determine are a transcript. **Proportion check:** a plan several times
+longer than its spec, or mostly code blocks, has written the program instead of planning it —
+replace bodies with signatures and assertions.
+
+**The spec is a vision document.** It says what the software must do, not every input it will
+meet. Its silence on an input is not permission for that input to break the program.
+
+After self-review, hand the plan to the user to read, with a recommended execution mode
+(`delegation.md`, inline vs agent-per-task) and one sentence on why. No implementation until they
+confirm.
 
 If the spec spans several independent subsystems, break it into one plan per subsystem. Each plan
 must produce working, testable software on its own.
@@ -335,8 +369,27 @@ Ask for:      correctness bugs, missed callers, security at trust boundaries,
               simplification/reuse opportunities. Severity-tag each finding.
 ```
 
+What the reviewer owes:
+
+- **Read past the diff.** Callers of every changed function, what it calls, its tests. A change
+  can break code it does not touch: a changed signature, return value or behavior means grepping
+  every caller.
+- **State the load assumed** — one person running a script, or many users and processes at once —
+  and judge scale against it: check-then-write races, per-item queries, unbounded growth, O(n²) on
+  real input, per-process state that must be shared.
+- **Every finding carries a concrete case:** "this input or situation produces this wrong result".
+  No case, no finding. No "consider", no taste, no vague worries.
+- **A marked shortcut (`upgrade:` comment naming its ceiling, §2) is a decision, not a finding** —
+  unless the expected load already crosses that ceiling.
+- **Spec silence is not permission.** Behavior the spec doesn't mention is judged by what a
+  reasonable user would expect.
+- **List what was declined.** Before the verdict, one line per behavior considered and set aside
+  as out of scope, with the reason. The author rules on each; nothing is dropped silently.
+
 Reviewer output format — one line per finding, most severe first:
 `path:line: <severity>: <problem>. <fix>.`
+End with a verdict (`ship` / `fix N first`) and `not checked:` for anything that mattered but
+couldn't be verified.
 
 Severities: **Critical** (data loss, security, incorrect behavior shipped) · **Important**
 (bug under a reachable condition, missing validation at a boundary) · **Minor** (clarity, naming,
@@ -398,10 +451,58 @@ Do not delegate to avoid thinking. A confident wrong answer costs more than the 
   your session.
 - **Next** — the exact form of the report you want back.
 
-## Parallel dispatch
+Keep the brief short: objective, files it may create or edit, files it must read, acceptance
+criteria written as tests, verification commands. Context the agent does not need is cost, not
+help.
 
-Only for genuinely independent work. Two agents editing the same file is a merge conflict you
-created on purpose. Split by file boundary or module boundary, never by "half the feature each".
+## Scope by file — the orchestrator's rules
+
+- **Every brief lists the exact files** the agent may create or edit, and the ones it should read.
+  Two parallel tasks never share a file. If two need the same file, they run in sequence, or the
+  orchestrator makes that change itself.
+- **Shared files belong to the orchestrator:** service/module registration, shared schema or DDL,
+  shared contracts, routing and menus, translations, solution/workspace files, Dockerfiles. The
+  agent reports the exact line to add ("pending registration") and does not apply it. A brief may
+  hand one shared file to one agent by name, only when no parallel task touches it.
+- **Contracts first.** If two tasks talk to each other, the orchestrator fixes the contract before
+  dispatching either.
+- **Work that needs a real environment is not delegated** — seeds, end-to-end runs against live
+  services, third-party integration. The orchestrator does it, or the task is redesigned so tests
+  can judge it.
+- **Never resume or relaunch an agent without first reading what it left behind.** Half-done work
+  is finished on the same branch, not redone on a new one.
+
+Split by file or module boundary, never by "half the feature each".
+
+## What the agent may do to verify — and nothing else
+
+**The compiler, the linter and the tests are the only judges inside a subagent.** Allowed: build
+the affected project, lint the touched files, run the affected tests (end-to-end only against
+mocked services). The full suite runs once, at the end.
+
+Forbidden inside a subagent: starting databases or containers, starting the app or API, HTTP calls
+against any service, screenshots, scratch scripts or console apps to "try it", web searches (unless
+the task *is* research), installing packages, merge, push, deploy. Manual verification is the
+orchestrator's call, made once, after integration — it is where delegation cost explodes.
+
+Same failure three times for the same cause → stop and report the exact error. Do not iterate.
+
+Report back in ~15 lines: branch and commit · files changed · pending registrations · build, lint
+and test commands with their numbers · assumptions and open items. No restating the brief, no
+explaining the code.
+
+## Inline vs agent-per-task
+
+For executing a written plan, pick deliberately and say why:
+
+- **Inline** — you implement every task in this session, then one fresh reviewer checks the whole
+  branch. Cheapest. Right when tasks lean on each other's interfaces, or the plan already carries
+  the design.
+- **Agent per task** — a fresh agent implements each task and a fresh reviewer gates it before the
+  next. Most thorough, one cold context per task and per review. Right when tasks are independent
+  and a shipped mistake is expensive.
+
+The user can veto delegation outright for a project; that holds until they lift it.
 
 ## Verifying agent output — mandatory
 

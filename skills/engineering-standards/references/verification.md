@@ -23,7 +23,7 @@ Skipping a step is not verifying, it is asserting.
 
 | Claim | Requires | Not sufficient |
 |---|---|---|
-| Tests pass | Test command output, 0 failures | A previous run, "should pass" |
+| Tests pass | The project's full test command, 0 failures | A previous run, "should pass", only the file you touched |
 | Linter clean | Linter output, 0 errors | A partial check, extrapolation |
 | Build succeeds | Build command, exit 0 | Linter passing, "logs look fine" |
 | Bug fixed | The original symptom retested, passing | Code changed, assumed fixed |
